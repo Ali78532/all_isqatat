@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>اختبار المجموعات</title>
+  <style>
+    :root{
+      --muted: #b7c3d1;
+      --accent: #005500;
+      --danger: #ef4444;
+      --verify-blue: #2563eb;
+      --retry-red: #ef4444;
+      --next-green: #059669;
+      --selected-gray: #6b7280;
+      --text: #eef6ff;
+      --q-bg: rgba(255,255,255,0.05);
+
+      /* blank sizing vars — عدّلها بسهولة من هنا */
+      --blank-width: 110px;
+      --blank-min-width: 110px;
+      --blank-max-width: 160px;
+      --blank-height: 30px;      /* ارتفاع الفراغ */
+      --blank-font-size: 18px;
+      --blank-padding-x: 10px;
+      --blank-gap-before: 4px;   /* المسافة بين النص والفراغ (قبل الفراغ) */
+    }
+
+   html, body {
+  height: 100%;
+  margin: 0;
+  background: #041220;
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* تحسين سلاسة التمرير على الأجهزة اللمسية */
+body{
+  color:var(--text);
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:12px;
+  box-sizing:border-box;
+  font-size:18px;
+  overflow:auto;
+  /* امنع إظهار إطار التمرير الافتراضي عند الإنعاش (إن أردت حجب الbounce تماماً) */
+  overscroll-behavior-y: contain; /* متصفحات حديثة */
+  -webkit-overflow-scrolling: touch; /* iOS smoother scroll */
+  touch-action: pan-y;
+}
+
+    .container{
+      width:100%;
+      max-width:980px;
+      background: transparent;
+      border: none;
+      padding:6px;
+    }
+
+    h1{
+      margin:6px 0 15px 0;
+      font-size:20px;
+      text-align:center;
+      color:var(--text);
+    }
+
+    .word-bank{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      justify-content:center;
+      margin-bottom:20px;
+    }
+    .word-btn{
+      background:#222255;
+      color:#ffffff;
+      padding:8px 4px;
+      border-radius:8px;
+      cursor:pointer;
+      user-select:none;
+      font-size:18px;
+      border:none;
+      box-sizing:border-box;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:110px; /* يمنع تغير العرض عند الضغط */
+      transition:background .12s ease, opacity .12s ease, transform .08s ease;
+    }
+    .word-btn:active { transform: translateY(1px); }
+    .word-btn.used{
+      background: var(--selected-gray);
+      color:#ffffff;
+      text-decoration: line-through;
+      opacity:0.95;
+    }
+
+    .questions{ margin:0; padding:0; }
+
+    .q{
+      display:block;
+      background: var(--q-bg);
+      border:1px solid rgba(255,255,255,0.06);
+      border-radius:8px;
+      padding:10px;
+      margin-bottom:8px;
+      box-sizing:border-box;
+      min-height:56px;
+      direction: ltr;   /* نجبر محتوى السؤال أن يعرض من اليسار */
+      text-align: left;
+    }
+
+    .questionText{
+      font-size:18px;
+      width:100%;
+      display:block;
+      white-space:normal;    /* التفاف طبيعي */
+      word-break:normal;
+      line-height:1.4;
+      direction: ltr;        /* تأكيد LTR داخل السؤال */
+      text-align: left;
+    }
+
+    .questionText .part {
+      display:inline;
+      vertical-align:middle;
+    }
+
+    .blank{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      vertical-align:middle;
+
+      width: var(--blank-width);
+      min-width: var(--blank-min-width);
+      max-width: var(--blank-max-width);
+      height: var(--blank-height);
+      padding: 0 var(--blank-padding-x);
+      box-sizing: border-box;
+
+      font-size: var(--blank-font-size);
+      line-height: normal;      /* لا تساوي height */
+      white-space: nowrap;      /* داخل المربع لا يكسر السطر */
+      overflow: visible;        /* يعرض النص بشكل كامل (بدون ثلاث نقاط) */
+      text-overflow: clip;
+
+      border-radius:6px;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+
+      margin-inline-start: var(--blank-gap-before); /* المسافة قبل الفراغ */
+      margin-inline-end: 0;
+      text-align:center;
+    }
+    .blank.empty{ color:var(--muted); background: transparent; }
+    .blank.filled{ color:#ffffff; background:#222255; border-radius:6px; padding:0 var(--blank-padding-x); }
+    .blank.correct{ background:var(--accent); color:#ffffff; border-radius:6px; padding:0 var(--blank-padding-x); }
+    .blank.incorrect{ background:var(--danger); color:#ffffff; border-radius:6px; padding:0 var(--blank-padding-x); }
+
+    /* زر التحقق / إعادة / التالي */
+    .controls{
+      display:flex;
+      gap:10px;
+      margin-top:12px;
+      justify-content:center;
+      width:100%;
+      align-items:center;
+    }
+    .btn{
+      padding:10px 16px;
+      border-radius:8px;
+      border:none;
+      cursor:pointer;
+      color:#ffffff;
+      font-weight:700;
+      font-size:18px;
+    }
+    .btn.verify{ background:var(--verify-blue); min-width:150px; }
+    .btn.retry{ background:var(--retry-red); min-width:130px; }
+    .btn.next{ background:var(--next-green); min-width:130px; }
+
+    .footer{
+      margin-top:10px;
+      text-align:center;
+      color:var(--muted);
+      font-size:18px;
+    }
+
+    /* مودال التهنئة */
+    .overlay{
+      position:fixed;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: rgba(2,6,23,0.6);
+      z-index:9999;
+      visibility:hidden;
+      opacity:0;
+      transition:opacity .18s ease, visibility .18s;
+    }
+    .overlay.show{ visibility:visible; opacity:1; }
+	.modal{
+	background: #ffffff;
+	text-align:center;
+    max-width: 320px;          /* أقصى عرض على الشاشات الكبيرة */
+    width: 90%;                /* يعطى مرونة نسبية على الشاشات الصغيرة */
+    padding: 12px 14px;        /* تقلل الحشوة لتقليل الحجم الكلي */
+    border-radius: 8px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.20);
+    margin: 0 12px;            /* مسافة أفقية صغيرة لضمان عدم التلاصق مع حافة الشاشة */
+    box-sizing: border-box;
+    color:#000000;
+    }
+    .modal h2{ margin:0 0 10px 0; font-size:20px; }
+    .modal p{ margin:0 0 12px 0; font-size:18px; color:#000; }
+
+    /* زر "حسناً" — أخضر، نص أبيض، مستدير */
+    .ok-btn {
+      display: inline-block;
+      background: var(--next-green);
+      color: #ffffff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 5px;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(5,150,105,0.18);
+      transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+    }
+    .ok-btn:hover{
+      transform: translateY(-1px);
+      filter: brightness(0.98);
+    }
+    .ok-btn:focus{
+      outline: 3px solid rgba(5,150,105,0.18);
+      outline-offset: 3px;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container" role="application" aria-label="اختبار المجموعات">
+    <h1 id="groupTitle">تعاريف اليونت الأول</h1>
+
+    <div id="wordBank" class="word-bank" aria-label="مصطلحات"></div>
+
+    <div class="questions" id="questionsArea"></div>
+
+    <div class="controls" id="controls">
+      <button class="btn verify" id="verifyBtn" style="display:none">تحقق</button>
+      <button class="btn retry" id="retryBtn" style="display:none">إعادة المحاولة</button>
+      <button class="btn next" id="nextBtn" style="display:none">المجموعة التالية</button>
+    </div>
+
+    <div class="footer">اعداد الاستاذ: علي حسين</div>
+  </div>
+
+  <div id="overlay" class="overlay" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h2>أحسنت 🎉</h2>
+      <p>لقد قمت بحل جميع الاسقاطات والتعاريف</p>
+      <button class="ok-btn" id="overlayOk">حسناً</button>
+    </div>
+  </div>
+
+<script>
+  const groups = [
+    {
+      title: "تعاريف اليونت الأول",
+      questions: [
+        { text: "1- It makes cars, boats and planes move. {blank}", answer: "engine" },
+        { text: "2- words and pictures to help sell things {blank}", answer: "advertisement" },
+        { text: "3- A person who helps others is {blank}", answer: "helpful" },
+        { text: "4- You can monitor your health with this device. {blank}", answer: "smartwatch" },
+        { text: "5- three or more people waiting in line {blank}", answer: "queue" }
+      ]
+    },
+    {
+      title: "اسقاطات اليونت الثاني",
+      questions: [
+        { text: "1- {blank} you like to come to the school graduation party with me?", answer: "Would" },
+        { text: "2- Are you {blank} on Thursday?", answer: "free" },
+        { text: "3- Is Friday {blank} for you?", answer: "better" },
+        { text: "4- Tell me if you {blank} Thursday or Friday", answer: "prefer" },
+        { text: "5- We don't {blank} to get tickets in advance.", answer: "need" },
+        { text: "6- It {blank} at 8:00.", answer: "starts" },
+        { text: "7- The seats {blank} 15,000 IQD.", answer: "cost" },
+        { text: "8- {blank} I get the cheapest?", answer: "Shall" }
+      ]
+    }
+  ];
+
+  let currentGroupIndex = 0;
+  const solvedGroups = new Array(groups.length).fill(false);
+
+  const groupTitleEl = document.getElementById('groupTitle');
+  const wordBankEl = document.getElementById('wordBank');
+  const questionsArea = document.getElementById('questionsArea');
+  const verifyBtn = document.getElementById('verifyBtn');
+  const retryBtn = document.getElementById('retryBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const overlay = document.getElementById('overlay');
+  const overlayOk = document.getElementById('overlayOk');
+
+  let placed = {};
+  let locked = false;
+  let blanks = [];
+  let currentWords = [];
+
+  function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+  }
+
+  function renderGroup(index){
+    currentGroupIndex = index;
+    const group = groups[index];
+    groupTitleEl.textContent = group.title;
+    currentWords = group.questions.map(q => q.answer);
+    renderBank();
+    renderQuestions(group.questions);
+    clearState();
+  }
+
+  function renderBank(){
+    wordBankEl.innerHTML = '';
+    const shuffled = shuffle([...currentWords]);
+    shuffled.forEach(w=>{
+      const btn = document.createElement('button');
+      btn.className = 'word-btn';
+      btn.type = 'button';
+      btn.textContent = w;
+      btn.dataset.word = w;
+      btn.addEventListener('click', ()=> onWordClick(btn));
+      wordBankEl.appendChild(btn);
+    });
+  }
+
+  function renderQuestions(qs){
+    questionsArea.innerHTML = '';
+    blanks = [];
+    qs.forEach((qObj, qi)=>{
+      const qRow = document.createElement('div');
+      qRow.className = 'q';
+
+      const qText = document.createElement('div');
+      qText.className = 'questionText';
+
+      // نفصل النص حول {blank} ثم نضيف كنود نصية مع الفراغ كعنصر inline-block
+      const parts = qObj.text.split('{blank}');
+      const beforeRaw = parts[0] || '';
+      const afterRaw = parts[1] || '';
+
+      // نزيل فراغات زائدة في نهاية الجزء قبل الفراغ لنتحكم بالمسافة بدقة
+      const before = beforeRaw.replace(/\s+$/,'');
+      const after = afterRaw.replace(/^\s+/, ''); // نزيل المسافات البادئة بعد الفراغ
+
+      // نضيف النص قبل الفراغ كنود نصية
+      qText.appendChild(document.createTextNode(before + ' ')); // نضمن مسافة واحدة قبل الفراغ
+
+      // انشاء الفراغ كعنصر inline-flex
+      const blank = document.createElement('span');
+      blank.className = 'blank empty';
+      blank.dataset.index = qi;
+      blank.id = `blank_${qi}`;
+      blank.textContent = '............';
+      blank.addEventListener('click', ()=> {
+        if(locked) return;
+        const w = blank.dataset.word;
+        if(!w) return;
+        removeWordFromBlank(w);
+      });
+      qText.appendChild(blank);
+
+      // نضيف النص الذي بعد الفراغ كنود نصية
+      qText.appendChild(document.createTextNode(' ' + after)); // نضيف مسافة واحدة بين الفراغ وبقية الجملة
+
+      qRow.appendChild(qText);
+      questionsArea.appendChild(qRow);
+      blanks.push(blank);
+    });
+  }
+
+  function clearState(){
+    placed = {};
+    locked = false;
+    blanks.forEach(b=>{
+      b.textContent = '....................';
+      b.dataset.word = '';
+      b.classList.remove('filled','correct','incorrect');
+      b.classList.add('empty');
+      b.style.pointerEvents = 'auto';
+    });
+    Array.from(document.querySelectorAll('.word-btn')).forEach(b=>{
+      b.classList.remove('used');
+      b.disabled = false;
+    });
+    verifyBtn.style.display = 'none';
+    retryBtn.style.display = 'none';
+    nextBtn.style.display = 'none';
+  }
+
+  function onWordClick(btn){
+    if(locked) return;
+    const w = btn.dataset.word;
+    if(btn.classList.contains('used')){
+      removeWordFromBlank(w);
+      return;
+    }
+    const nextIdx = blanks.findIndex(b=>!b.dataset.word || b.dataset.word === '');
+    if(nextIdx === -1) return;
+    const b = blanks[nextIdx];
+    b.textContent = w;
+    b.dataset.word = w;
+    b.classList.remove('empty');
+    b.classList.add('filled');
+    placed[w] = nextIdx;
+    btn.classList.add('used');
+    checkAllFilled();
+  }
+
+  function removeWordFromBlank(word){
+    const idx = placed[word];
+    if(idx === undefined) return;
+    const b = blanks[idx];
+    if(!b) return;
+    b.textContent = '....................';
+    b.dataset.word = '';
+    b.classList.remove('filled','correct','incorrect');
+    b.classList.add('empty');
+    delete placed[word];
+    const bankBtn = Array.from(document.querySelectorAll('.word-btn')).find(x=>x.dataset.word === word);
+    if(bankBtn) bankBtn.classList.remove('used');
+    checkAllFilled();
+  }
+
+  function checkAllFilled(){
+    const allFilled = blanks.every(b=>b.dataset.word && b.dataset.word !== '');
+    if(allFilled){
+      verifyBtn.style.display = 'inline-block';
+    } else {
+      verifyBtn.style.display = 'none';
+    }
+    retryBtn.style.display = 'none';
+    nextBtn.style.display = 'none';
+    blanks.forEach(b=> b.classList.remove('correct','incorrect'));
+  }
+
+  verifyBtn.addEventListener('click', ()=>{
+    verifyBtn.style.display = 'none';
+    locked = true;
+    Array.from(document.querySelectorAll('.word-btn')).forEach(b=> b.disabled = true);
+    blanks.forEach(b=> b.style.pointerEvents = 'none');
+    const currentAns = groups[currentGroupIndex].questions.map(q=>String(q.answer).toLowerCase());
+    let allCorrect = true;
+    blanks.forEach((b,i)=>{
+      const placedWord = (b.dataset.word || '').toString();
+      if(placedWord.toLowerCase() === currentAns[i]){
+        b.classList.add('correct');
+        b.classList.remove('incorrect','empty','filled');
+        b.textContent = groups[currentGroupIndex].questions[i].answer;
+      } else {
+        b.classList.add('incorrect');
+        b.classList.remove('correct','empty','filled');
+        b.textContent = b.dataset.word ? b.dataset.word : groups[currentGroupIndex].questions[i].answer;
+        allCorrect = false;
+      }
+    });
+    if(allCorrect) solvedGroups[currentGroupIndex] = true;
+    if(allCorrect){
+      nextBtn.style.display = 'inline-block';
+      retryBtn.style.display = 'none';
+    } else {
+      retryBtn.style.display = 'inline-block';
+      nextBtn.style.display = 'none';
+    }
+    if(solvedGroups.every(v => v === true)){
+      setTimeout(()=> showCongrats(), 300);
+    }
+  });
+
+  retryBtn.addEventListener('click', ()=>{
+    renderGroup(currentGroupIndex);
+    solvedGroups[currentGroupIndex] = false;
+  });
+
+  nextBtn.addEventListener('click', ()=>{
+    const nextIndex = (currentGroupIndex + 1) % groups.length;
+    renderGroup(nextIndex);
+  });
+
+  function showCongrats(){
+    overlay.classList.add('show');
+  }
+  overlayOk.addEventListener('click', ()=>{
+    overlay.classList.remove('show');
+    for(let i=0;i<solvedGroups.length;i++) solvedGroups[i]=false;
+    renderGroup(0);
+  });
+
+  // init
+  renderGroup(0);
+</script>
+</body>
+</html>
